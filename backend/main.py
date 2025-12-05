@@ -1,8 +1,8 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, UploadFile, File
 from pydantic import BaseModel
 from typing import List, Literal, Optional
 import os
-import json
+import json, base64
 from dotenv import load_dotenv
 from openai import OpenAI
 from fastapi.middleware.cors import CORSMiddleware
@@ -176,6 +176,28 @@ def build_preference_user_prompt(req: PreferenceRequest) -> str:
         - Tone and sanjiComment should match the reason (e.g., romantic for a date, playful for lazy food).
         """
 
+def build_vision_system_prompt() -> str:
+    return """
+        You are an expert chef and computer vision assistant.
+        The user will send you a photo of ingredients on a counter or in a kitchen.
+
+        Your job:
+        - List the visible, reasonably identifiable food ingredients.
+        - Use simple ingredient names (e.g., "chicken breast", "garlic", "onion", "tomato", "butter", "milk").
+        - Ignore non-food items like knives, cutting boards, bottles without clear labels, etc.
+        - If you are unsure, either skip the item or give a generic name like "unknown leafy greens".
+
+        Output a single JSON object with this exact schema:
+
+        {
+        "ingredients": [
+            { "name": string }
+        ]
+        }
+
+        Do not include any extra text outside the JSON.
+        """
+
 @app.post("/recipe-from-pantry", response_model=PantryResponse)
 def recipe_from_pantry(req: PantryRequest):
     system_prompt = build_sanji_system_prompt()
@@ -217,3 +239,65 @@ def recipe_from_preferences(req: PreferenceRequest):
 
     except Exception:
         raise HTTPException(status_code=500, detail="Sanji slipped on some oil. Try again.")
+
+@app.post("/ingredients-from-image")
+async def ingredients_from_image(file: UploadFile = File(...)):
+    try:
+        # Read image bytes
+        content = await file.read()
+
+        # Encode as base64 so we can send as a data URL
+        b64_image = base64.b64encode(content).decode("utf-8")
+        data_url = f"data:{file.content_type};base64,{b64_image}"
+
+        system_prompt = build_vision_system_prompt()
+
+        completion = client.chat.completions.create(
+            # if this complains about images, switch to "gpt-4.1" or "gpt-4o-mini"
+            model="gpt-4.1-mini",
+            messages=[
+                {
+                    "role": "system",
+                    "content": system_prompt,
+                },
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": (
+                                "Look at this image and list the cooking ingredients you can see, "
+                                "following the JSON schema."
+                            ),
+                        },
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": data_url
+                            },
+                        },
+                    ],
+                },
+            ],
+            response_format={"type": "json_object"},
+        )
+
+        content_json = completion.choices[0].message.content
+        data = json.loads(content_json)
+
+        ingredients = data.get("ingredients", [])
+        norm = []
+        for item in ingredients:
+            if isinstance(item, dict) and "name" in item:
+                norm.append({"name": item["name"]})
+            elif isinstance(item, str):
+                norm.append({"name": item})
+        return {"ingredients": norm}
+
+    except Exception as e:
+        print("Vision error:", e)
+        raise HTTPException(
+            status_code=500,
+            detail="Sanji couldn't read the picture. Try another photo."
+        )
+
