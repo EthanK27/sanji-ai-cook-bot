@@ -1,0 +1,24 @@
+Installations:
+- Python
+- Node/npm
+- JavaScript
+- git
+
+General Setup Commands
+- git --version
+- py --version
+- node -v
+- npm -v
+mkdir sanji-ai-cook-bot
+mkdir backend frontend assets docs
+touch README.md
+git init
+touch .gitignore
+
+Virtual Environment Stuff (Backend) + Python commands
+py -m venv .venv
+source .venv/Scripts/activate
+pip install fastapi uvicorn openai python-dotenv
+pip freeze > requirements.txt (to allow others to recreate w/ pip install -r requirements.txt)
+
+
