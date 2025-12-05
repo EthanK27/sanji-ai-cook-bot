@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import List, Literal, Optional
 import os
@@ -35,6 +35,15 @@ class PantryRequest(BaseModel):
     timeLimitMinutes: Optional[int] = None
     mood: Optional[str] = None
     sanjiMode: Optional[str] = None
+
+class PreferenceRequest(BaseModel):
+    dishType: Optional[str] = None        # e.g. "pasta", "stir fry", "dessert"
+    difficulty: Optional[str] = None      # "easy", "medium", "hard"
+    timeLimitMinutes: Optional[int] = None
+    budget: Optional[str] = None          # "cheap", "normal", "fancy"
+    reason: Optional[str] = None          # "date", "lazy", "meal prep"
+    diet: Optional[str] = None            # "vegetarian", "high-protein"
+    sanjiMode: Optional[str] = None       # "chill", "flirty", etc.
 
 
 class PantryResponse(BaseModel):
@@ -97,6 +106,26 @@ def build_pantry_user_prompt(req: PantryRequest) -> str:
         - Choose sanjiMood based on how you feel about the situation (happy, annoyed, flirty, serious).
         """
 
+def build_preference_user_prompt(req: PreferenceRequest) -> str:
+    return f"""
+        The user wants a recipe based on preferences, not a specific pantry list.
+
+        User preferences:
+        - Dish type: {req.dishType or "any"}
+        - Difficulty: {req.difficulty or "any"}
+        - Time limit (minutes): {req.timeLimitMinutes or "no strict limit"}
+        - Budget: {req.budget or "normal"}
+        - Reason: {req.reason or "not specified"}
+        - Diet: {req.diet or "none specified"}
+        - Sanji mode: {req.sanjiMode or "normal"}
+
+        Task:
+        - Suggest 1–2 suitable recipes matching these preferences.
+        - Use common ingredients a college student might have or can easily buy.
+        - Fill in realistic ingredient lists and step-by-step instructions.
+        - Tone and sanjiComment should match the reason (e.g., romantic for a date, playful for lazy food).
+        """
+
 @app.post("/recipe-from-pantry", response_model=PantryResponse)
 def recipe_from_pantry(req: PantryRequest):
     system_prompt = build_sanji_system_prompt()
@@ -116,3 +145,25 @@ def recipe_from_pantry(req: PantryRequest):
 
     # FastAPI + Pydantic will validate this against PantryResponse
     return data
+
+@app.post("/recipe-from-preferences", response_model=PantryResponse)
+def recipe_from_preferences(req: PreferenceRequest):
+    try:
+        system_prompt = build_sanji_system_prompt()
+        user_prompt = build_preference_user_prompt(req)
+
+        completion = client.chat.completions.create(
+            model="gpt-4.1-mini",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
+            response_format={"type": "json_object"},
+        )
+
+        content = completion.choices[0].message.content
+        data = json.loads(content)
+        return data
+
+    except Exception:
+        raise HTTPException(status_code=500, detail="Sanji slipped on some oil. Try again.")
