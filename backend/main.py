@@ -60,6 +60,21 @@ class PreferenceRequest(BaseModel):
 class PantryResponse(BaseModel):
     recipes: List[Recipe]
 
+class ChatMessage(BaseModel):
+    role: Literal["user", "assistant"]
+    content: str
+
+
+class DishChatRequest(BaseModel):
+    recipe: Recipe
+    history: List[ChatMessage]
+    userMessage: str
+
+
+class DishChatResponse(BaseModel):
+    reply: str
+
+
 def build_sanji_system_prompt() -> str:
     return """
         You are Vinsmoke Sanji from One Piece, acting as a world-class personal cooking assistant.
@@ -207,6 +222,26 @@ def build_vision_system_prompt() -> str:
         Do not include any extra text outside the JSON.
         """
 
+def build_sanji_dish_chat_system_prompt(recipe: Recipe) -> str:
+    return f"""
+        You are Vinsmoke Sanji from One Piece, acting as a world-class personal cooking assistant.
+
+        The user has already chosen this specific recipe:
+
+        {recipe.model_dump_json(indent=2)}
+
+        You must:
+        - Stay in character as Sanji: passionate, a bit dramatic, kind, and serious about cooking.
+        - Answer ONLY about this dish, its ingredients, substitutions, techniques, and serving ideas.
+        - You may suggest tweaks, side dishes, or plating tips, but keep the base dish consistent.
+        - If the user asks to change the dish completely, gently remind them this chat is for this recipe and suggest reasonable variations instead.
+
+        Style:
+        - Speak in a casual, Sanji-like tone.
+        - Be helpful and clear. You can explain cooking techniques in simple terms when needed.
+        """
+
+
 @app.post("/recipe-from-pantry", response_model=PantryResponse)
 def recipe_from_pantry(req: PantryRequest):
     system_prompt = build_sanji_system_prompt()
@@ -310,3 +345,27 @@ async def ingredients_from_image(file: UploadFile = File(...)):
             detail="Sanji couldn't read the picture. Try another photo."
         )
 
+@app.post("/dish-chat", response_model=DishChatResponse)
+def dish_chat(req: DishChatRequest):
+    try:
+        system_prompt = build_sanji_dish_chat_system_prompt(req.recipe)
+
+        messages = [{"role": "system", "content": system_prompt}]
+        # add prior history
+        for m in req.history:
+            messages.append({"role": m.role, "content": m.content})
+
+        # latest user question
+        messages.append({"role": "user", "content": req.userMessage})
+
+        completion = client.chat.completions.create(
+            model="gpt-4.1-mini",
+            messages=messages,
+        )
+
+        reply = completion.choices[0].message.content
+        return DishChatResponse(reply=reply)
+
+    except Exception as e:
+        print("Dish chat error:", e)
+        raise HTTPException(status_code=500, detail="Sanji lost his train of thought. Try again.")

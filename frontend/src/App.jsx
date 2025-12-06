@@ -4,6 +4,7 @@ import { styles } from "./styles";
 import SanjiHeader from "./components/SanjiHeader";
 import PantryForm from "./components/PantryForm";
 import RecipeList from "./components/RecipeList";
+import DishChatWindow from "./components/DishChatWindow";
 
 function App() {
     const [ingredientsText, setIngredientsText] = useState("");
@@ -20,6 +21,11 @@ function App() {
     const [error, setError] = useState("");
     const [recipes, setRecipes] = useState([]);
     const [sanjiMood, setSanjiMood] = useState("happy");
+
+    const [selectedRecipe, setSelectedRecipe] = useState(null);
+    const [chatMessages, setChatMessages] = useState([]);
+    const [chatSending, setChatSending] = useState(false);
+
 
     // ---- Handlers ----
 
@@ -128,6 +134,54 @@ function App() {
         }
     }
 
+    function handleStartChatForRecipe(recipe) {
+        setSelectedRecipe(recipe);
+        setChatMessages([]); // fresh chat for this dish
+    }
+
+    async function handleSendChatMessage(text) {
+        if (!selectedRecipe || !text.trim()) return;
+
+        const newUserMessage = { role: "user", content: text.trim() };
+
+        // optimistic update
+        const newHistory = [...chatMessages, newUserMessage];
+        setChatMessages(newHistory);
+        setChatSending(true);
+        setError("");
+
+        try {
+            const res = await fetch("http://127.0.0.1:8000/dish-chat", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    recipe: selectedRecipe,
+                    history: newHistory,
+                    userMessage: text.trim(),
+                }),
+            });
+
+            if (!res.ok) {
+                throw new Error("Sanji couldn't answer right now.");
+            }
+
+            const data = await res.json();
+            const assistantMessage = { role: "assistant", content: data.reply };
+
+            setChatMessages((prev) => [...prev, assistantMessage]);
+        } catch (err) {
+            console.error(err);
+            setError(err.message || "Something went wrong in the dish chat.");
+        } finally {
+            setChatSending(false);
+        }
+    }
+
+    function handleCloseChat() {
+        setSelectedRecipe(null);
+        setChatMessages([]);
+    }
+
     const sanjiMoodText = {
         happy: "😄 Sanji is pleased.",
         annoyed: "😠 Sanji is annoyed by your pantry.",
@@ -161,7 +215,21 @@ function App() {
 
                 {error && <p style={styles.error}>{error}</p>}
 
-                <RecipeList recipes={recipes} />
+                <RecipeList 
+                    recipes={recipes}
+                    onStartChat={handleStartChatForRecipe}
+                />
+
+                {selectedRecipe && (
+                    <DishChatWindow
+                        recipe={selectedRecipe}
+                        messages={chatMessages}
+                        onSend={handleSendChatMessage}
+                        onClose={handleCloseChat}
+                        sending={chatSending}
+                    />
+                )}
+
             </div>
         </div>
     );
