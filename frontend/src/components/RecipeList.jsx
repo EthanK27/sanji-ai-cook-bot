@@ -1,9 +1,7 @@
 import { styles } from "../styles";
 
-export default function RecipeList({ recipes }) {
-    if (!recipes || recipes.length === 0) {
-        return null;
-    }
+export default function RecipeList({ recipes, onStartChat }) {
+    if (!recipes || recipes.length === 0) return null;
 
     return (
         <div style={listStyles.container}>
@@ -39,6 +37,14 @@ export default function RecipeList({ recipes }) {
                             <li key={idx}>{step}</li>
                         ))}
                     </ol>
+
+                    <button
+                        type="button"
+                        style={listStyles.chatButton}
+                        onClick={() => onStartChat && onStartChat(r)}
+                    >
+                        Chat with Sanji about this dish
+                    </button>
                 </div>
             ))}
         </div>
@@ -63,5 +69,15 @@ const listStyles = {
     },
     sectionTitle: {
         marginTop: "0.75rem",
+    },
+    chatButton: {
+        marginTop: "0.75rem",
+        padding: "0.4rem 0.8rem",
+        borderRadius: "9999px",
+        border: "none",
+        background: "#3b82f6",
+        color: "#f9fafb",
+        fontWeight: 500,
+        cursor: "pointer",
     },
 };

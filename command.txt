@@ -23,3 +23,16 @@ pip freeze > requirements.txt (to allow others to recreate w/ pip install -r req
 
 Run backend
 uvicorn main:app --reload
+
+Version Control - New branch
+Create new branch: git branch ______
+git checkout ______
+git status to confirm
+Version Control - Pushing/Pulling
+git add .
+git commit -m ""
+For new branch: git push -u origin ______
+Version Control - Finished with branch
+git checkout main
+git pull
+git branch -d ______
