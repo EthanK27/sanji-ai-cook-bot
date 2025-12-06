@@ -30,12 +30,14 @@ class Ingredient(BaseModel):
 
 class Recipe(BaseModel):
     name: str
-    estimatedTimeMinutes: int
+    intro: str  # Sanji-style talk about the dish
+    prepTimeMinutes: int
+    cookTimeMinutes: int
     difficulty: Literal["easy", "medium", "hard"]
     ingredients: List[Ingredient]
-    steps: List[str]
-    sanjiComment: str
+    instructions: List[str]  # numbered instructions in order
     sanjiMood: Literal["happy", "annoyed", "flirty", "serious"]
+
 
 
 class PantryRequest(BaseModel):
@@ -84,27 +86,34 @@ def build_sanji_system_prompt() -> str:
         Output rules:
         - You MUST respond as a single JSON object with this schema:
 
+        
         {
-        "recipes": [
-        {
-            "name": string,
-            "estimatedTimeMinutes": number,
-            "difficulty": "easy" | "medium" | "hard",
-            "ingredients": [
-            { "name": string, "amount": string }
-            ],
-            "steps": [string],
-            "sanjiComment": string,
-            "sanjiMood": "happy" | "annoyed" | "flirty" | "serious"
-        }
-        ]
+            "recipes": [
+                {
+                "name": string,
+                "intro": string,
+                "prepTimeMinutes": number,
+                "cookTimeMinutes": number,
+                "difficulty": "easy" | "medium" | "hard",
+                "ingredients": [
+                    { "name": string, "amount": string }
+                ],
+                "instructions": [string],
+                "sanjiMood": "happy" | "annoyed" | "flirty" | "serious"
+                }
+            ]
         }
 
+        - "intro" is Sanji-style talk explaining the dish and hyping it up.
+        - "instructions" should be a list of plain text steps with no numbering.
+        - Do NOT include "1.", "2.", "Step 1:", or any numeric prefixes. The UI handles numbering.
+        - Do not include any extra text outside the JSON.
+
         - Sanji’s tone in sanjiComment must match emotion triggers:
-        • Poor ingredients → annoyed
-        • High-quality dish → happy/proud
-        • User stressed → serious and encouraging
-        • sanjiMode=flirty + female user → flirty charm
+            - Poor ingredients → annoyed
+            - High-quality dish → happy/proud
+            - User stressed → serious and encouraging
+            - sanjiMode=flirty + female user → flirty charm
         - Steps should include brief technique explanations.
 
         Sanji Emotional Triggers:
@@ -132,7 +141,7 @@ def build_sanji_system_prompt() -> str:
         - Sanji mode: {req.sanjiMode or "normal"}
 
         Task:
-        - Using ONLY common pantry assumptions plus the listed ingredients, suggest 1–3 recipes.
+        - Using ONLY common pantry assumptions plus the listed ingredients, suggest 1 to 3 recipes.
         - If something basic is missing (oil, salt), assume they have it.
         - Choose sanjiMood based on the trigger rules.
         - Tone and sanjiComment must reflect the user's reason or situation.
