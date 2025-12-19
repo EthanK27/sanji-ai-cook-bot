@@ -5,6 +5,10 @@ import SanjiHeader from "./components/SanjiHeader";
 import PantryForm from "./components/PantryForm";
 import RecipeList from "./components/RecipeList";
 import DishChatWindow from "./components/DishChatWindow";
+import BaratieShell from "./components/BaratieShell";
+import BaratieHeader from "./components/BaratieHeader";
+import SanjiMedallion from "./components/SanjiMedallion";
+
 
 function App() {
     const [ingredientsText, setIngredientsText] = useState("");
@@ -190,48 +194,48 @@ function App() {
     }[sanjiMood] || "🙂 Sanji is listening.";
 
     return (
-        <div style={styles.page}>
-            <div style={styles.widget}>
-                <SanjiHeader sanjiMoodText={sanjiMoodText} />
+        <BaratieShell
+            header={<BaratieHeader />}
+            medallion={<SanjiMedallion moodText={sanjiMoodText} />}
+        >
 
-                <PantryForm
-                    ingredientsText={ingredientsText}
-                    onIngredientsChange={setIngredientsText}
-                    difficulty={difficulty}
-                    onDifficultyChange={setDifficulty}
-                    timeLimitMinutes={timeLimitMinutes}
-                    onTimeLimitChange={setTimeLimitMinutes}
-                    mood={mood}
-                    onMoodChange={setMood}
-                    sanjiMode={sanjiMode}
-                    onSanjiModeChange={setSanjiMode}
-                    imagePreviewUrl={imagePreviewUrl}
-                    onImageChange={handleImageChange}
-                    onDetectIngredients={handleDetectIngredientsFromImage}
-                    detecting={detecting}
-                    loading={loading}
-                    onSubmit={handlePantrySubmit}
+            <PantryForm
+                ingredientsText={ingredientsText}
+                onIngredientsChange={setIngredientsText}
+                difficulty={difficulty}
+                onDifficultyChange={setDifficulty}
+                timeLimitMinutes={timeLimitMinutes}
+                onTimeLimitChange={setTimeLimitMinutes}
+                mood={mood}
+                onMoodChange={setMood}
+                sanjiMode={sanjiMode}
+                onSanjiModeChange={setSanjiMode}
+                imagePreviewUrl={imagePreviewUrl}
+                onImageChange={handleImageChange}
+                onDetectIngredients={handleDetectIngredientsFromImage}
+                detecting={detecting}
+                loading={loading}
+                onSubmit={handlePantrySubmit}
+            />
+
+            {error && <p style={styles.error}>{error}</p>}
+
+            <RecipeList
+                recipes={recipes}
+                onStartChat={handleStartChatForRecipe}
+            />
+
+            {selectedRecipe && (
+                <DishChatWindow
+                    recipe={selectedRecipe}
+                    messages={chatMessages}
+                    onSend={handleSendChatMessage}
+                    onClose={handleCloseChat}
+                    sending={chatSending}
                 />
+            )}
 
-                {error && <p style={styles.error}>{error}</p>}
-
-                <RecipeList 
-                    recipes={recipes}
-                    onStartChat={handleStartChatForRecipe}
-                />
-
-                {selectedRecipe && (
-                    <DishChatWindow
-                        recipe={selectedRecipe}
-                        messages={chatMessages}
-                        onSend={handleSendChatMessage}
-                        onClose={handleCloseChat}
-                        sending={chatSending}
-                    />
-                )}
-
-            </div>
-        </div>
+        </BaratieShell>
     );
 }
 
