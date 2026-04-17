@@ -15,7 +15,7 @@ function App() {
     const [difficulty, setDifficulty] = useState("easy");
     const [timeLimitMinutes, setTimeLimitMinutes] = useState(20);
     const [mood, setMood] = useState("casual dinner alone");
-    const [sanjiMode, setSanjiMode] = useState("chill");
+    const [sanjiMode, setSanjiMode] = useState("happy");
 
     const [imageFile, setImageFile] = useState(null);
     const [imagePreviewUrl, setImagePreviewUrl] = useState("");
@@ -24,7 +24,6 @@ function App() {
     const [detecting, setDetecting] = useState(false);
     const [error, setError] = useState("");
     const [recipes, setRecipes] = useState([]);
-    const [sanjiMood, setSanjiMood] = useState("happy");
 
     const [selectedRecipe, setSelectedRecipe] = useState(null);
     const [chatMessages, setChatMessages] = useState([]);
@@ -127,9 +126,6 @@ function App() {
 
             const data = await res.json();
             setRecipes(data.recipes || []);
-            if (data.recipes && data.recipes[0]?.sanjiMood) {
-                setSanjiMood(data.recipes[0].sanjiMood);
-            }
         } catch (err) {
             console.error(err);
             setError(err.message || "Something went wrong.");
@@ -187,16 +183,19 @@ function App() {
     }
 
     const sanjiMoodText = {
-        happy: "😄 Sanji is pleased.",
-        annoyed: "😠 Sanji is annoyed by your pantry.",
-        flirty: "😍 Sanji turns on the charm.",
-        serious: "😐 Sanji is focused.",
-    }[sanjiMood] || "🙂 Sanji is listening.";
+        happy: "Sanji is pleased.",
+        love: "Sanji turns on the charm.",
+        annoyed: "Sanji is annoyed by your pantry.",
+        angry: "Sanji is furious.",
+        disgust: "Sanji is disgusted... but cooking.",
+        glare: "Sanji is locked in.",
+        mad: "Sanji is fed up.",
+    }[sanjiMode] || "Sanji is listening.";
 
     return (
         <BaratieShell
             header={<BaratieHeader />}
-            medallion={<SanjiMedallion moodText={sanjiMoodText} />}
+            medallion={<SanjiMedallion moodText={sanjiMoodText} sanjiMode={sanjiMode} />}
         >
 
             <PantryForm

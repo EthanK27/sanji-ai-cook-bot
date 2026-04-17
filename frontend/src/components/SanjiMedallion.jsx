@@ -1,58 +1,113 @@
-import sanjiImg from "../assets/sanji-test.jpg";
+import { T } from "../theme";
+import imgHappy from "../assets/Sanji-Happy.png";
+import imgLove from "../assets/Sanji-Love.png";
+import imgAnnoyed from "../assets/Sanji-Annoyed.png";
+import imgAngry from "../assets/Sanji-Angry.jpg";
+import imgDisgust from "../assets/Sanji-Disgust.png";
+import imgGlare from "../assets/Sanji-Glare.png";
+import imgMad from "../assets/Sanji-MadFrustrated.png";
 
-export default function SanjiMedallion({ moodText }) {
-    return (
-        <div style={med.wrap}>
-            <div style={med.ring}>
-                <div style={med.inner}>
-                    {/* later: replace with a Sanji sprite image */}
-                    <img
-                        src={sanjiImg}
-                        alt="Sanji"
-                        style={med.image}
-                    />
-                </div>
-            </div>
+const modeImageMap = {
+  happy: imgHappy,
+  love: imgLove,
+  annoyed: imgAnnoyed,
+  angry: imgAngry,
+  disgust: imgDisgust,
+  glare: imgGlare,
+  mad: imgMad,
+};
+
+export default function SanjiMedallion({ moodText, sanjiMode }) {
+  const sanjiImg = modeImageMap[sanjiMode] ?? imgHappy;
+
+  return (
+    <div style={med.wrap}>
+      {/* Decorative outer shadow ring */}
+      <div style={med.shadowRing}>
+        {/* Conic gold ring — like a gilded ship medallion */}
+        <div style={med.goldRing}>
+          {/* Dark deep inner circle */}
+          <div style={med.innerCircle}>
+            <img src={sanjiImg} alt="Sanji — sous chef of the Baratie" style={med.image} />
+          </div>
         </div>
-    );
+      </div>
+
+      {/* Mood badge below */}
+      {moodText && (
+        <div style={med.moodBadge}>
+          <span style={med.moodText}>{moodText}</span>
+        </div>
+      )}
+    </div>
+  );
 }
 
 const med = {
-    wrap: { display: "flex", justifyContent: "center" },
-    ring: {
-        width: 240,
-        height: 240,
-        borderRadius: "50%",
-        background: "radial-gradient(circle at 30% 30%, rgba(176,141,87,1), rgba(90,65,35,1))",
-        padding: 10,
-        boxShadow: "0 20px 40px rgba(0,0,0,0.45)",
-    },
-    inner: {
-        width: "100%",
-        height: "100%",
-        borderRadius: "50%",
-        background: "radial-gradient(circle at 30% 20%, #0b1b2b, #020617)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: 10,              // ⬅️ spacing lives here now
-        boxShadow:
-            "inset 0 0 40px rgba(0,0,0,0.7), inset 0 0 8px rgba(255,255,255,0.05)",
-    },
-
-    name: { fontSize: "1.25rem", fontWeight: 800, letterSpacing: "0.06em" },
-    mood: { fontSize: "0.85rem", opacity: 0.85 },
-    placeholder: { fontSize: "2.2rem", marginTop: "0.2rem" },
-    image: {
-        width: "100%",          // ⬅️ key change
-        height: "100%",
-        borderRadius: "50%",
-        objectFit: "cover",
-        objectPosition: "center",
-        border: "2px solid rgba(176,141,87,0.55)",
-        boxShadow: "0 12px 22px rgba(0,0,0,0.6)",
-    },
-
-
-
+  wrap: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '0.9rem',
+  },
+  shadowRing: {
+    width: 256,
+    height: 256,
+    borderRadius: '50%',
+    padding: 5,
+    background: 'rgba(0,0,0,0.3)',
+    boxShadow: `
+      0 0 0 1px rgba(212,168,67,0.2),
+      0 28px 56px rgba(0,0,0,0.6),
+      0 8px 16px rgba(0,0,0,0.4)
+    `,
+  },
+  goldRing: {
+    width: '100%',
+    height: '100%',
+    borderRadius: '50%',
+    background: `conic-gradient(
+      ${T.goldDim}   0deg,
+      ${T.gold}      40deg,
+      ${T.goldLight} 80deg,
+      ${T.gold}      120deg,
+      ${T.goldDim}   160deg,
+      ${T.gold}      200deg,
+      ${T.goldLight} 240deg,
+      ${T.gold}      280deg,
+      ${T.goldDim}   320deg,
+      ${T.gold}      360deg
+    )`,
+    padding: 10,
+    boxShadow: `inset 0 0 14px rgba(0,0,0,0.5)`,
+  },
+  innerCircle: {
+    width: '100%',
+    height: '100%',
+    borderRadius: '50%',
+    overflow: 'hidden',
+    background: `radial-gradient(circle at 35% 25%, #1B3D55, #05121E)`,
+    boxShadow: `inset 0 0 28px rgba(0,0,0,0.7)`,
+  },
+  image: {
+    width: '100%',
+    height: '100%',
+    objectFit: 'cover',
+    objectPosition: 'center top',
+    display: 'block',
+  },
+  moodBadge: {
+    background: `rgba(9,30,46,0.55)`,
+    border: `1px solid rgba(212,168,67,0.35)`,
+    borderRadius: '999px',
+    padding: '0.3rem 0.9rem',
+    backdropFilter: 'blur(8px)',
+  },
+  moodText: {
+    fontFamily: T.body,
+    fontSize: '0.82rem',
+    color: T.goldLight,
+    letterSpacing: '0.04em',
+    fontWeight: 400,
+  },
 };
